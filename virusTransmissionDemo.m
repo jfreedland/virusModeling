@@ -1,18 +1,20 @@
 %% Virus transmission demo
 % By J. Freedland, 2019.
 %
-% Run this script to perform a simple simulation for how viruses spread.
+% Run this script to model HIV, Hepatitis B, and Dengue virus.
+% These models solve a set of three ordinary differential equations using
+% published parameters derived from clinical studies.
 %
-% Our first model (HIV) calculates viral spread (virusTransmission.m)
+% Our first model (HIV) simulates viral spread (virusTransmission.m)
 % Then, it calculates how much more infective HIV would need to be to
 % successfully infect ~100% of cells within 8 hours (findInfectivity.m)
 %
-% Our second model (Hepatitis B) calcuates viral spread (virusTransmission.m)
+% Our second model (Hepatitis B) simulates viral spread (virusTransmission.m)
 % Then, it calculates how much more infective Hepatitis B would need to be
-% successfully infect a different percentages of cells in 8 hours
+% successfully infect several different percentages of cells over 8 hours
 % (infectivityConstants.m)
 %
-% Our third model (Dengue virus) only calcuates viral spread. (virusTransmission.m)
+% Our third model (Dengue virus) only simulates viral spread. (virusTransmission.m)
 %%%%%%%%%%%%%%%%%%%
 
 %% HIV model
