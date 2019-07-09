@@ -33,16 +33,16 @@
 %           realismFactor: structure with data from fminsearch.
 %%%%%%%%%%%%%%%%%%%
 
-function f0 = virusAdaptation(params,t1,percentSpread)
+function [f0, r] = virusAdaptation(params,t1,percentSpread)
 
     global trajectory
 
-    f0 = [1 1 1]; % Begin search assuming no virus adaptation.
+    f0 = [1+rand() 1+rand() 1+rand()]; % Begin search assuming no virus adaptation.
     
     % Calculate new parameters.
-    adaptVirusInfectivity   = @(f) f(1) * params.beta;
-    adaptVirusReplication   = @(f) f(2) * params.p;
-    adaptCellInfectivity    = @(f) f(3) * params.omega;
+    adaptVirusInfectivity   = @(f) double(f(1)>=1) * f(1) * params.beta;
+    adaptVirusReplication   = @(f) double(f(2)>=1) * f(2) * params.p;
+    adaptCellInfectivity    = @(f) double(f(3)>=1) * f(3) * params.omega;
     
     % Define differential equations
     options = odeset('NonNegative', [1 2 3]); % Cannot encounter negative concentrations of cells.
@@ -55,9 +55,12 @@ function f0 = virusAdaptation(params,t1,percentSpread)
     minimizeRatio = @(f) abs(1 - calculateRatio(f));     
     
     % Use gradient descent to find minimum
+    options = optimset('MaxFunEvals',1e8,'MaxIter',1e8);
     for iter = 1:20
-        f0 = abs(fminsearch(@(f) minimizeRatio(f), f0));
+        f0 = abs(fminsearch(@(f) minimizeRatio(f), f0,options));
     end
+    
+    r = calculateRatio(f0);
       
     % Differential equations.
     function dydt = infection(t,y)
