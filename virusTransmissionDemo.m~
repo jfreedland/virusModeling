@@ -54,8 +54,8 @@ legend({'healthy cells','infected cells','viruses'})
 % For instance, an output of [2 1 1] suggests that a 2x increase in virus
 % infectivity can create a "successful infection" in the allotted time.
 
-% Each simulation will produce different solutions, all of which are valid.
-% Our code deliberately biases a specific pathway to ensure diversity in our output.
+% Each simulation will produce different results, all of which are valid; our code randomly biases a specific
+% pathway to ensure diversity in our output.
 
 % Initial concentrations of cells.
 params.target      = 5e3;       % Healthy cells per uL
@@ -78,14 +78,14 @@ percentInfected     = 1;       % Percent of healthy cells infected for us to con
 
 fSolution = zeros(nSimulations,3);
 for a = 1:nSimulations
-    [f0, ~] = virusAdaptation(params,time_optimized,percentInfected); % Perform adaptation search.
-    fSolution(a,:) = f0; % Save result.
+    [f0, ~] = virusAdaptation(params,time_optimized,percentInfected);
+    fSolution(a,:) = f0;
     disp(f0)
 end
 
 % Simulate result
-[t1, T1, I1, V1] = modelSystem(params,[1 1 1]); % Original virus.
-[t2, T2, I2, V2] = modelSystem(params,f0);      % New virus
+[t1, T1, I1, V1] = modelSystem(params,[1 1 1]);     % Original virus.
+[t2, T2, I2, V2] = modelSystem(params,f0);          % New virus
 
 figure(1)
 subplot(1,2,1)
@@ -119,3 +119,24 @@ params.c       = 0.8;
 params.omega   = 10^-3;
 
 params.time_phase   = 30;
+
+% [f0, ~] = virusAdaptation(params,1,1);
+f0 = [1 1 1];
+[t, ~, I, ~] = modelSystem(params,f0);
+
+% fSolution = zeros(100,3);
+% for a = 1:100
+%     [f0, ~] = virusAdaptation(params,1,1);
+%     fSolution(a,:) = f0;
+%     disp(f0)
+% end
+% success = zeros(100,1);
+% A = sort(fSolution);
+% 
+% for a = 1:100
+%     f0 = A(a,:);
+%     [t, ~, I, ~] = modelSystem(params,f0);
+%     
+%     [~,i] = min(abs(t - 1));
+%     success(a,1) = I(i) / max(I(:));
+% end
