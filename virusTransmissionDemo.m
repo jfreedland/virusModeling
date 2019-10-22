@@ -1,121 +1,292 @@
 %% README
 % By J. Freedland, 2019.
-
-% This demo simulates the spread of HIV and dengue viruses within a host.
-% It relies on two main functions:
 %
-%   modelSystem:        solves a system of ODEs to simulate the spread of the
-%                       respective bloodborne virus.
-%   virusAdaptation:    uses fminsearch to "adapt" our virus until it is
-%                       capable of spreading within a certain period of time.
+% This demo simulates the spread of dengue within a host according to
+% https://www.sciencedirect.com/science/article/pii/S0895717708002732.
 %
-% A series of initial conditions are presented below based on
-% referenced literature.
+% Functions:
+%   modelSystem:        solves a system of ODEs to simulate the spread of a
+%                       bloodborne virus given specific parameters.
+%
+% Inputs: 
+%   We use a global variable (type) to indicate the type of simulation to run,
+%       type = 1: simulation using standard parameters.
+%       type = 2: simulation with zero immune cell activity.
+%       type = 3: simulation with slowly degrading immune cell activity.
+%           degredationTime: time until immunity is fully degraded (hours)
+%       type = 4: simulation with slowly degrading immune cell activity
+%                 UNTIL we reach a time when a "cure" kicks in.
+%           degredationTime: time until immunity is fully degraded (hours)
+%           healthResponse: time at which recovery begins (hours).
+%
+% This code is intended to supplement relevant literature on Buffy the
+% Vampire Slayer by simulating "vampirism".
 
-%% HIV (without adaptation)
-% Modeling of the spread of HIV in a host.
-% Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5072357/
 
-% Initial concentrations of cells.
-params.target      = 5e3;       % Healthy cells per uL
-params.infected    = 0;         % Infected cells per uL
-params.virus       = 0.4e-3;    % Viruses per uL
+%% Replicating results for https://www.sciencedirect.com/science/article/pii/S0895717708002732
+% see: Fig. 6 and Fig. 7.
+clear
+global type
+type = 1; %#ok<NASGU>
 
-% Virus-specific spread parameters.
-params.lambda  = 100;                   % Production of new healthy cells (per uL)
-params.dT      = 0.1;                   % Healthy cell death rate (without virus)
-params.dI      = 0.5;                   % Infected cell death rate
-params.beta    = 10^-5;                 % Virus infectivity (per uL^-1)
-params.p       = 1.5*10^3;              % Virus production rate
-params.c       = 10;                    % Virus clearence rate (by immune system)
-params.omega   = 10^-3;                 % Cell-to-cell infectivity (can set to 0 to consider virus-cell interactions only).
-
-params.time_phase   = 30;      % Number of hours/days to consider (depends on units)
-f0 = [1 1 1];                  % Adaptational parameters ([1 1 1] == no adaptations).
-
-[t, T, I, V] = modelSystem(params,f0);  % Solve set of ODEs.
-
-figure(1)
-semilogy(t,T,t,I,t,V) 
-xlabel('time')
-ylabel('population')
-legend({'healthy cells','infected cells','viruses'})
-
-%% HIV (with adaptation)
-% Modeling of the spread of an adapted virus in a host. 
-% Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5072357/
-
-% Interpretting our output:
-% f0 is the output of our function. It is a set of three values ([x y z])
-% that adjust the following parameters:
-    % Virus infectivity:            x * params.beta;
-    % Virus replication:            y * params.p;
-    % Cell-to-cell infectivity:     z * params.omega;
-% For instance, an output of [2 1 1] suggests that a 2x increase in virus
-% infectivity can create a "successful infection" in the allotted time.
-
-% Each simulation will produce different solutions, all of which are valid.
-% Our code deliberately biases a specific pathway to ensure diversity in our output.
-
-% Initial concentrations of cells.
-params.target      = 5e3;       % Healthy cells per uL
-params.infected    = 0;         % Infected cells per uL
-params.virus       = 0.4e-3;    % Viruses per uL
-
-% Virus-specific spread parameters.
-params.lambda  = 100;                   % Production of new healthy cells (per uL)
-params.dT      = 0.1;                   % Healthy cell death rate (without virus)
-params.dI      = 0.5;                   % Infected cell death rate
-params.beta    = 10^-5;                 % Virus infectivity (per uL^-1)
-params.p       = 1.5*10^3;              % Virus production rate
-params.c       = 10;                    % Virus clearence rate (by immune system)
-params.omega   = 10^-3;                 % Cell-to-cell infectivity (can set to 0 to consider virus-cell interactions only).
-
-params.time_phase   = 30;      % Number of hours/days to consider in the base simulation (depends on units).
-nSimulations        = 1;       % Number of adaptations to run
-time_optimized      = 1;       % Number of hours/days for our virus to fully infects in (depends on units)
-percentInfected     = 1;       % Percent of healthy cells infected for us to conclude a "successful infection" occurred. (0 to 1)
-
-fSolution = zeros(nSimulations,3);
-for a = 1:nSimulations
-    [f0, ~] = virusAdaptation(params,time_optimized,percentInfected); % Perform adaptation search.
-    fSolution(a,:) = f0; % Save result.
-    disp(f0)
-end
-
-% Simulate result
-[t1, T1, I1, V1] = modelSystem(params,[1 1 1]); % Original virus.
-[t2, T2, I2, V2] = modelSystem(params,f0);      % New virus
-
-figure(1)
-subplot(1,2,1)
-semilogy(t1,T1,t1,I1,t1,V1) 
-xlabel('time')
-ylabel('population')
-title('original virus')
-
-subplot(1,2,2)
-semilogy(t2,T2,t2,I2,t2,V2) 
-legend({'healthy cells','infected cells','viruses'})
-title('adapted virus')
-%% Dengue Virus
-% source: https://www.sciencedirect.com/science/article/pii/S0895717708002732
-
-% Amount of solution considered (in ml)
-mL = 27;
-
-% Initial concentrations of cells.
-params.target      = 5e3;     % Healthy cells per uL
-params.infected    = 0;      % Infected cells per uL
-params.virus       = 0.4e-3;  % Viruses per uL
+params.S  = 250;        % Target cells
+params.I  = 10;         % Infected cells
+params.V  = 150;        % Viruses
+params.Z  = 2000;       % Immune cells
 
 % Values of model parameters passed in y
-params.lambda  = 80;         % per uL
-params.dT      = 0;
-params.dI      = 0.5; 
-params.beta    = 10^-3;  % per uL^-1
-params.p       = 20;
-params.c       = 0.8;
-params.omega   = 10^-3;
+params.mu      = 80;    % Target cell production: cell/(day ul)
+params.alpha   = 1/3;   % Life span (1/day)
+params.a       = 0.001; % Infectivity
+params.beta    = 0.5;   % Infection period
+params.v       = 0.001; % Immune cell efficiency
+params.k       = 20;    % Virus multiplication
+params.gamma   = 0.8;   % Virus clearence rate
+params.c       = 0.01;  % Rate of immune cell production (due to density of infected cells)
+params.d       = 0.03;  % Rate of immune cell production (due to interactions with infected cells)
+params.delta   = 1/365; % 1/day
+params.n       = 0.265; % Base immune cell production: cell/(day ul)
 
-params.time_phase   = 30;
+params.time_phase = 15; % Time to run simulation.
+
+[t, T, I, V, Z] = modelSystem(params);  % Solve set of ODEs.
+
+figure(1)
+subplot(2,2,1)
+axis([0 250 0 15])
+plot(t,T) 
+subplot(2,2,2)
+axis([0 15 0 15])
+plot(t,I) 
+subplot(2,2,3)
+axis([0 250 0 15])
+plot(t,V) 
+subplot(2,2,4)
+axis([0 10000 0 15])
+plot(t,Z) 
+
+%% Figure 1
+% We repeat the above simulation using parameters observed in Darla's
+% siring (Angel, S2E9).
+
+clear
+global type
+type = 1; %#ok<NASGU>
+
+% As measured in Angel, S2E9.
+params.S  = 1e6;      % Target cells
+params.I  = 5;        % Infected cells
+params.V  = 5;        % Viruses
+params.Z  = 2000;     % Immune cells
+
+% These parameters are all the same as Dengue Virus.
+params.mu      = 80;    % Target cell production: cell/(day ul)
+params.alpha   = 1/3;   % Life span (1/day)
+params.a       = 0.001; % Infectivity
+params.beta    = 0.5;   % Infection period
+params.v       = 0.001; % Immune cell efficiency
+params.k       = 20;    % Virus multiplication
+params.gamma   = 0.8;   % Virus clearence rate
+params.c       = 0.01;  % Rate of immune cell production (due to density of infected cells)
+params.d       = 0.03;  % Rate of immune cell production (due to interactions with infected cells)
+params.delta   = 1/365; % 1/day
+params.n       = 0.265; % Base immune cell production: cell/(day ul)
+
+params.time_phase = 1;  % Simulate for 1 day.
+
+[t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
+t = t .* 24;            % Convert to hours
+
+% First simulation
+figure(1)
+subplot(2,2,1)
+semilogy(t,I)
+axis([0 24 1 1e6])
+xlabel('time (hours)')
+ylabel('infected cells per uL blood')
+subplot(2,2,3)
+plot(t,Z)
+axis([0 24 0 8e4])
+xlabel('time (hours)')
+ylabel('immune cells per uL blood')
+
+type = 2; %#ok<NASGU>                   % Negate all immune cell activity
+[t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
+t = t .* 24;                            % Convert to hours
+
+% Second simulation
+figure(1)
+subplot(2,2,2)
+semilogy(t,I)
+axis([0 24 1 1e6])
+subplot(2,2,4)
+plot(t,Z)
+axis([0 24 0 8e4])
+
+%% Figure 2
+clear
+close
+clc
+global type
+global degredationTime
+type = 3; %#ok<NASGU>
+
+% As measured in Angel, S2E9.
+params.S  = 1e6;      % Target cells
+params.I  = 5;        % Infected cells
+params.V  = 5;        % Viruses
+params.Z  = 2000;     % Immune cells
+
+% These parameters are all the same as Dengue Virus.
+params.mu      = 80;    % Target cell production: cell/(day ul)
+params.alpha   = 1/3;   % Life span (1/day)
+params.a       = 0.001; % Infectivity
+params.beta    = 0.5;   % Infection period
+params.v       = 0.001; % Immune cell efficiency
+params.k       = 20;    % Virus multiplication
+params.gamma   = 0.8;   % Virus clearence rate
+params.c       = 0.01;  % Rate of immune cell production (due to density of infected cells)
+params.d       = 0.03;  % Rate of immune cell production (due to interactions with infected cells)
+params.delta   = 1/365; % 1/day
+params.n       = 0.265; % Base immune cell production: cell/(day ul)
+
+params.time_phase = 1;  % Simulate for 1 day.
+degradingTimes = [14.5 11 8.5];  % Hours until immunity is lost (representative of short, medium, long bite)
+
+% Repeat simulation for multiple exposure rates 
+volume = 1:10:500; % in mL
+
+turningTime = zeros(length(volume),length(degradingTimes));
+counter = 1;
+for a = degradingTimes
+    degredationTime = a; % Set immune system's degredation time
+    counter2 = 1;
+    
+    for b = (volume  ./ 20) % 1 virus/uL blood == 20mL ingested volume
+        
+        params.I = b;   % Set relevant starting condition
+        params.V = b;
+        
+        [t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
+        t = t .* 24;                            % Convert to hours
+    
+        turningTime(counter2,counter) = max([0 t(find(I > 4000, 1 ))]); % Find when the 0.4% threshold is crossed
+        counter2 = counter2 + 1;
+    end
+    counter = counter + 1;
+end
+
+turningTime(turningTime == 0) = NaN;
+
+% Plot
+plot(volume,turningTime(:,1),volume,turningTime(:,2),volume,turningTime(:,3))
+legend({'short','medium','long'})
+xlabel('volume of vampire blood ingested (mL)')
+ylabel('time until fully dusted (hrs)')
+
+%% Supplementary Figure 1
+clear
+close
+clc
+global type
+global degredationTime
+type = 3; %#ok<NASGU>
+
+% As measured in Angel, S2E9.
+params.S  = 1e6;      % Target cells
+params.I  = 5;        % Infected cells
+params.V  = 5;        % Viruses
+params.Z  = 2000;     % Immune cells
+
+% These parameters are all the same as Dengue Virus.
+params.mu      = 80;    % Target cell production: cell/(day ul)
+params.alpha   = 1/3;   % Life span (1/day)
+params.a       = 0.001; % Infectivity
+params.beta    = 0.5;   % Infection period
+params.v       = 0.001; % Immune cell efficiency
+params.k       = 20;    % Virus multiplication
+params.gamma   = 0.8;   % Virus clearence rate
+params.c       = 0.01;  % Rate of immune cell production (due to density of infected cells)
+params.d       = 0.03;  % Rate of immune cell production (due to interactions with infected cells)
+params.delta   = 1/365; % 1/day
+params.n       = 0.265; % Base immune cell production: cell/(day ul)
+
+params.time_phase = 1;  % Simulate for 1 day.
+degradingTimes = [14.5 13 11 8.5];  % Hours until immunity is lost (representative of short, medium, long bite)
+
+% Repeat simulation for multiple exposure rates 
+figure(1)
+hold on
+for a = degradingTimes
+    
+    degredationTime = a; % Set immune system's degredation time
+        
+    [t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
+    t = t .* 24;                            % Convert to hours
+    
+    plot(t,I)
+    line([0 24],[4e3 4e3],'Color','red','LineStyle','--')
+end
+hold off
+set(gca, 'YScale', 'log')
+
+%% 4 hour calculation
+clear
+close
+clc
+global type
+global degredationTime
+global healthResponse
+type = 4; %#ok<NASGU>
+
+% As measured in Angel, S2E9.
+params.S  = 1e6;      % Target cells
+params.I  = 5;        % Infected cells
+params.V  = 5;        % Viruses
+params.Z  = 2000;     % Immune cells
+
+% These parameters are all the same as Dengue Virus.
+params.mu      = 80;    % Target cell production: cell/(day ul)
+params.alpha   = 1/3;   % Life span (1/day)
+params.a       = 0.001; % Infectivity
+params.beta    = 0.5;   % Infection period
+params.v       = 0.001; % Immune cell efficiency
+params.k       = 20;    % Virus multiplication
+params.gamma   = 0.8;   % Virus clearence rate
+params.c       = 0.01;  % Rate of immune cell production (due to density of infected cells)
+params.d       = 0.03;  % Rate of immune cell production (due to interactions with infected cells)
+params.delta   = 1/365; % 1/day
+params.n       = 0.265; % Base immune cell production: cell/(day ul)
+
+params.time_phase = 1;  % Simulate for 1 day.
+degradingTimes = [14.5 13 11 8.5];  % Hours until immunity is lost (representative of short, medium, long bite)
+healthResponse = 6;     % Time at which healing begins
+
+% Repeat simulation for multiple exposure rates 
+figure(1)
+for a = degradingTimes
+    
+    degredationTime = a; % Set immune system's degredation time
+        
+    [t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
+    t = t .* 24;                            % Convert to hours
+    
+    subplot(2,1,1)
+    hold on
+    plot(t,I)
+    line([0 24],[4e3 4e3],'Color','red','LineStyle','--')
+    
+    subplot(2,1,2)
+    hold on
+    plot(t,Z)
+end
+subplot(2,1,1)
+set(gca, 'YScale', 'log')
+xlabel('time (hours)')
+ylabel('infected cells per uL blood')
+hold off
+
+subplot(2,1,2)
+xlabel('time (hours)')
+ylabel('immune cells per uL blood')
+hold off
