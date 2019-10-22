@@ -230,7 +230,7 @@ end
 hold off
 set(gca, 'YScale', 'log')
 
-%% 4 hour calculation
+%% Naive healing model for victim (calculation).
 clear
 close
 clc
