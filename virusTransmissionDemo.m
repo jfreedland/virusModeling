@@ -182,7 +182,7 @@ turningTime(turningTime == 0) = NaN;
 plot(volume,turningTime(:,1),volume,turningTime(:,2),volume,turningTime(:,3))
 legend({'short','medium','long'})
 xlabel('volume of vampire blood ingested (mL)')
-ylabel('time until fully dusted (hrs)')
+ylabel('time until fully turned (hrs)')
 
 %% Supplementary Figure 1
 clear
