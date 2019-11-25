@@ -4,6 +4,12 @@
 % This demo simulates the spread of dengue within a host according to
 % https://www.sciencedirect.com/science/article/pii/S0895717708002732.
 %
+%
+% The figures generated in this demo correspond with: 
+% "Spreading vampirism: Viral disease models in Buffy the Vampire Slayer"
+% J. Freedland & K. Young, 2019
+% DOI: 10.31219/osf.io/yd69q
+%
 % Functions:
 %   modelSystem:        solves a system of ODEs to simulate the spread of a
 %                       bloodborne virus given specific parameters.
@@ -19,12 +25,10 @@
 %           degredationTime: time until immunity is fully degraded (hours)
 %           healthResponse: time at which recovery begins (hours).
 %
-% This code is intended to supplement relevant literature on Buffy the
-% Vampire Slayer by simulating "vampirism".
-
-
-%% Replicating results for https://www.sciencedirect.com/science/article/pii/S0895717708002732
+%% Figure 0
+% We begin by replicating results for https://www.sciencedirect.com/science/article/pii/S0895717708002732
 % see: Fig. 6 and Fig. 7.
+
 clear
 global type
 type = 1; %#ok<NASGU>
@@ -95,7 +99,7 @@ params.n       = 0.265; % Base immune cell production: cell/(day ul)
 params.time_phase = 1;  % Simulate for 1 day.
 
 [t, ~, I, ~, Z] = modelSystem(params);  % Solve set of ODEs.
-t = t .* 24;            % Convert to hours
+t = t .* 24;                            % Convert to hours
 
 % First simulation
 figure(1)
@@ -124,6 +128,9 @@ plot(t,Z)
 axis([0 24 0 8e4])
 
 %% Figure 2
+% Warning: This simulation is extensive, and may take up to minutes. 
+% To shorten, change the variable "volume" to be less coarse.
+
 clear
 close
 clc
@@ -212,7 +219,7 @@ params.delta   = 1/365; % 1/day
 params.n       = 0.265; % Base immune cell production: cell/(day ul)
 
 params.time_phase = 1;  % Simulate for 1 day.
-degradingTimes = [14.5 13 11 8.5];  % Hours until immunity is lost (representative of short, medium, long bite)
+degradingTimes = [14.5 13 11.5 8.5];  % Hours until immunity is lost (representative of short, medium, long bite)
 
 % Repeat simulation for multiple exposure rates 
 figure(1)
@@ -230,7 +237,7 @@ end
 hold off
 set(gca, 'YScale', 'log')
 
-%% Naive healing model for victim (calculation).
+%% Simulating a 6 hour naive healing model
 clear
 close
 clc

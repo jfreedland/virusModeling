@@ -4,26 +4,52 @@
 %
 % By J. Freedland, 2019.
 %
+% Corresponds with: 
+% "Spreading vampirism: Viral disease models in Buffy the Vampire Slayer"
+% J. Freedland & K. Young, 2019
+% DOI: 10.31219/osf.io/yd69q
+%
+% For easiest use, please run using virusTransmissionDemo.m
+%
 % INPUTS:   params: Structure with each variable defined.
 %                   ex: params.beta == variable beta (infectivity) in the differential equation.
 %       
-%       REQUIRES:   params.target       Healthy cells (initial condition)
-%                   params.infected     Infected cells (initial condition)
-%                   params.virus        Viruses (initial condition)
-%                   params.lambda       Production of new healthy cells
-%                   params.dT           Healthy cell death rate without virus
-%                   params.dI           Infected cell death rate
-%                   params.beta         Virus infectivity
-%                   params.p            Virus production rate
-%                   params.c            Virus clearence rate by immune system
-%                   params.time_phase	Number of hours/days to consider (depends on units)
-
-%           f0:     results of adaptational factors from virusAdaptation.
+%       REQUIRES:   params.mu:      Target cell production
+%                   params.alpha:   Life span
+%                   params.a        Infectivity
+%                   params.beta     Infection period
+%                   params.v        Immune cell efficiency
+%                   params.k        Virus multiplication
+%                   params.gamma	Virus clearence rate
+%                   params.c        Rate of immune cell production (due to density of infected cells)
+%                   params.d        Rate of immune cell production (due to interactions with infected cells)
+%                   params.delta	Immune cell death rate
+%                   params.n        Base immune cell production
+%
+%                   params.S            Initial concentration of healthy cells
+%                   params.I            Initial concentration of infected cells
+%                   params.V            Initial concentration of viruses
+%                   params.Z            Initial concentration of immune cells
+%                   params.time_phase   Length of time to run simulation
+%
+%       We also use a global variable (type) to indicate the type of
+%       simulation to run:
+%           type = 1: Simulation using standard parameters.
+%           type = 2: Simulation with zero immune cell activity.
+%           type = 3: Simulation with slowly degrading immune cell activity.
+%                     degredationTime: time until immunity is fully degraded (hours)
+%           type = 4: Simulation with slowly degrading immune cell activity
+%                     UNTIL we reach a time when a "cure" kicks in.
+%
+%       Type 3 and 4 require additional global variables.
+%           degredationTime:    Time until immunity is fully degraded (hours)
+%           healthResponse:     Time at which recovery begins (hours).
 %
 % OUTPUTS:  t: Vector containing time course. Units depend on rate constants.
-%           T: Target cells: Number of healthy cells (as function of t).
-%           I: Infected cells: Number of infected cells (as function of t).
-%           V: Viruses: Number of viruses (as a function of t).
+%           S: Healthy / Target cells.
+%           I: Infected cells
+%           V: Viruses
+%           Z: Immune cells
 %%%%%%%%%%%%%%%%%%%
 
 function [t, S, I, V, Z] = modelSystem(params)
